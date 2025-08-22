@@ -27,9 +27,6 @@ public class MainActivity extends AppCompatActivity {
                 } else if (id == R.id.nav_transactions) {
                     Toast.makeText(MainActivity.this, "Transactions selected", Toast.LENGTH_SHORT).show();
                     return true;
-                } else if (id == R.id.nav_add) {
-                    Toast.makeText(MainActivity.this, "Add selected", Toast.LENGTH_SHORT).show();
-                    return true;
                 } else if (id == R.id.nav_statistics) {
                     Toast.makeText(MainActivity.this, "Statistics selected", Toast.LENGTH_SHORT).show();
                     return true;
