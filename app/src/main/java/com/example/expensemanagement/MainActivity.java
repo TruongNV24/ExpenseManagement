@@ -2,9 +2,9 @@ package com.example.expensemanagement;
 
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -17,18 +17,31 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
 
+        // Mặc định mở HomeFragment khi vào app
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.container, new HomeFragment())
+                    .commit();
+        }
+
         bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                Fragment selectedFragment = null;
                 int id = item.getItemId();
+
                 if (id == R.id.nav_home) {
-                    Toast.makeText(MainActivity.this, "Home selected", Toast.LENGTH_SHORT).show();
-                    return true;
+                    selectedFragment = new HomeFragment();
                 } else if (id == R.id.nav_transactions) {
-                    Toast.makeText(MainActivity.this, "Transactions selected", Toast.LENGTH_SHORT).show();
-                    return true;
+                    selectedFragment = new TransactionsFragment();
                 } else if (id == R.id.nav_statistics) {
-                    Toast.makeText(MainActivity.this, "Statistics selected", Toast.LENGTH_SHORT).show();
+                    selectedFragment = new StatisticsFragment();
+                }
+
+                if (selectedFragment != null) {
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.container, selectedFragment)
+                            .commit();
                     return true;
                 }
                 return false;
