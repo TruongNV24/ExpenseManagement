@@ -1,6 +1,8 @@
 package com.example.expensemanagement;
 
-public class Transaction {
+import java.io.Serializable;
+
+public class Transaction implements Serializable {
     private final String title;
     private final String date;
     private final double amount;
@@ -11,6 +13,7 @@ public class Transaction {
         this.date = date;
         this.amount = amount;
         this.isIncome = isIncome;
+
     }
 
     public String getTitle() { return title; }

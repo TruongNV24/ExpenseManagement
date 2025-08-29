@@ -4,4 +4,11 @@
     <string name="nav_transactions">Transactions</string>
     <string name="nav_add">Add</string>
     <string name="nav_statistics">Statistics</string>
+    <string-array name="categories">
+        <item>Food</item>
+        <item>Transport</item>
+        <item>Shopping</item>
+        <item>Salary</item>
+        <item>Other</item>
+    </string-array>
 </resources>
