@@ -1,69 +1,79 @@
 package com.example.expensemanagement;
 
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.expensemanagement.R;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.expensemanagement.database.Transaction;
+import com.example.expensemanagement.R;
+
 import java.util.List;
-import java.util.Locale;
 
-public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.VH> {
+public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TransactionViewHolder> {
 
-    private final List<Transaction> data;
+    private List<Transaction> transactionList;
 
-    public TransactionAdapter(List<Transaction> data) {
-        this.data = data;
+    public TransactionAdapter(List<Transaction> transactionList) {
+        this.transactionList = transactionList;
+    }
+
+    public void setData(List<Transaction> list) {
+        this.transactionList = list;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public TransactionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_transaction, parent, false);
-        return new VH(v);
+        return new TransactionViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int position) {
-        Transaction t = data.get(position);
-        h.tvTitle.setText(t.getTitle());
-        h.tvDate.setText(t.getDate());
+    public void onBindViewHolder(@NonNull TransactionViewHolder holder, int position) {
+        Transaction tx = transactionList.get(position);
+        if (tx == null) return;
 
-        String amountText = String.format(Locale.US, "%s$%.2f",
-                t.isIncome() ? "+" : "-", t.getAmount());
-        h.tvAmount.setText(amountText);
+        holder.txtNote.setText(tx.getNote());
+        holder.txtDate.setText(tx.getDate());
+        holder.txtCategory.setText(tx.getCategoryName() != null ? tx.getCategoryName() : "Unknown");
 
-        if (t.isIncome()) {
-            h.tvAmount.setTextColor(h.itemView.getResources().getColor(android.R.color.holo_green_dark));
-            h.imgType.setImageResource(R.drawable.ic_income);   // đã có trong project của bạn
+        // Format số tiền
+        String amountStr = String.format("%.2f", tx.getAmount());
+        if (tx.isIncome()) {
+            holder.txtAmount.setText("+ " + amountStr);
+            holder.txtAmount.setTextColor(holder.itemView.getResources().getColor(android.R.color.holo_green_dark));
+            holder.iconType.setImageResource(R.drawable.ic_income); // icon bạn tự thêm
         } else {
-            h.tvAmount.setTextColor(h.itemView.getResources().getColor(android.R.color.holo_red_dark));
-            h.imgType.setImageResource(R.drawable.ic_spending); // đã có trong project của bạn
+            holder.txtAmount.setText("- " + amountStr);
+            holder.txtAmount.setTextColor(holder.itemView.getResources().getColor(android.R.color.holo_red_dark));
+            holder.iconType.setImageResource(R.drawable.ic_send); // icon bạn tự thêm
         }
     }
 
     @Override
     public int getItemCount() {
-        return data.size();
+        return transactionList != null ? transactionList.size() : 0;
     }
 
-    static class VH extends RecyclerView.ViewHolder {
-        ImageView imgType;
-        TextView tvTitle, tvDate, tvAmount;
+    public static class TransactionViewHolder extends RecyclerView.ViewHolder {
+        TextView txtNote, txtDate, txtAmount, txtCategory;
+        ImageView iconType;
 
-        VH(@NonNull View itemView) {
+        public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgType = itemView.findViewById(R.id.imgType);
-            tvTitle = itemView.findViewById(R.id.tvTitle);
-            tvDate = itemView.findViewById(R.id.tvDate);
-            tvAmount = itemView.findViewById(R.id.tvAmount);
+            txtNote = itemView.findViewById(R.id.txtNote);
+            txtDate = itemView.findViewById(R.id.txtDate);
+            txtAmount = itemView.findViewById(R.id.txtAmount);
+            txtCategory = itemView.findViewById(R.id.txtCategory);
+            iconType = itemView.findViewById(R.id.iconType);
         }
     }
 }

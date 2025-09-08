@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: menu - title - actions -->
+        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -60,8 +60,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -81,7 +81,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="$34,671.80"
+                    android:text=""
                     android:textSize="28sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -179,7 +179,7 @@
                         android:id="@+id/tvIncome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="+$4,622.30"
+                        android:text=""
                         android:textColor="@android:color/holo_green_dark" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -216,7 +216,7 @@
                         android:id="@+id/tvSpending"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-$4,822.30"
+                        android:text=""
                         android:textColor="@android:color/holo_red_dark" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

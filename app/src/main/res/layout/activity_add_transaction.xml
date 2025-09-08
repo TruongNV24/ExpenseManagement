@@ -5,35 +5,96 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Back button -->
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="Back" />
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="GIAO DỊCH"
+            android:textStyle="bold"
+            android:textSize="20sp" />
+
+        <!-- Plus button -->
+        <ImageButton
+            android:id="@+id/btnAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_input_add"
+            android:contentDescription="Add" />
+    </LinearLayout>
+
+    <!-- Type (Income / Expense) -->
+    <RadioGroup
+        android:id="@+id/radioGroupType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="24dp">
+
+        <RadioButton
+            android:id="@+id/radioIncome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Income" />
+
+        <RadioButton
+            android:id="@+id/radioExpense"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Expense" />
+    </RadioGroup>
+
     <!-- Amount -->
     <EditText
         android:id="@+id/edtAmount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Amount"
-        android:inputType="numberDecimal" />
+        android:inputType="numberDecimal"
+        android:layout_marginTop="16dp"/>
+
+    <!-- Category -->
+    <EditText
+        android:id="@+id/edtCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Category"
+        android:layout_marginTop="12dp"/>
 
     <!-- Note -->
     <EditText
         android:id="@+id/edtNote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Note" />
-
-    <!-- Category -->
+        android:hint="Note"
+        android:layout_marginTop="12dp"/>
 
     <!-- Date -->
-    <Spinner
-        android:id="@+id/spinnerCategory"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
     <EditText
         android:id="@+id/edtDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:focusable="false"
-        android:hint="Select Date" />
+        android:hint="Select Date"
+        android:layout_marginTop="12dp"/>
 
     <!-- Save + Cancel -->
     <LinearLayout
@@ -41,7 +102,7 @@
         android:layout_height="wrap_content"
         android:gravity="end"
         android:orientation="horizontal"
-        android:paddingTop="16dp">
+        android:layout_marginTop="24dp">
 
         <Button
             android:id="@+id/btnCancel"
@@ -54,7 +115,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Save"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="12dp" />
     </LinearLayout>
 
 </LinearLayout>
