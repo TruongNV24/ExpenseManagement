@@ -4,11 +4,17 @@
     <string name="nav_transactions">Transactions</string>
     <string name="nav_add">Add</string>
     <string name="nav_statistics">Statistics</string>
+
+    <!-- Dùng cho Spinner chọn danh mục -->
+    <string name="category">Danh mục</string>
     <string-array name="categories">
-        <item>Food</item>
-        <item>Transport</item>
-        <item>Shopping</item>
-        <item>Salary</item>
-        <item>Other</item>
+    </string-array>
+
+    <!-- Dùng cho Spinner chọn loại giao dịch -->
+    <string name="transaction_type">Loại giao dịch</string>
+    <string-array name="transaction_types">
+        <item>All</item>
+        <item>Income</item>
+        <item>Expense</item>
     </string-array>
 </resources>

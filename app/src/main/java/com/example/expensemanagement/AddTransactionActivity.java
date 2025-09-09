@@ -48,12 +48,14 @@ public class AddTransactionActivity extends AppCompatActivity {
             }
         }
 
-        // Date Picker
+        // Date Picker -> Lưu theo yyyy-MM-dd
         edtDate.setOnClickListener(v -> {
             Calendar c = Calendar.getInstance();
             new DatePickerDialog(this, (view, year, month, day) -> {
-                String d = day + "/" + (month + 1) + "/" + year;
-                edtDate.setText(d);
+                String d = year + "-" +
+                        String.format("%02d", (month + 1)) + "-" +
+                        String.format("%02d", day);
+                edtDate.setText(d);  // lưu chuẩn ISO format
             }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
         });
 
@@ -90,7 +92,7 @@ public class AddTransactionActivity extends AppCompatActivity {
 
             if (newId > 0) {
                 Toast.makeText(this, "Transaction saved!", Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK, new Intent()); // báo về HomeFragment load lại
+                setResult(RESULT_OK, new Intent()); // báo về HomeFragment/TransactionsFragment load lại
                 finish();
             } else {
                 Toast.makeText(this, "Error saving transaction", Toast.LENGTH_SHORT).show();

@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Đây là lớp quản lý SQLite Database
+// Lớp quản lý SQLite Database
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "expense_db";
@@ -48,14 +48,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Tạo bảng categories
+        // Bảng categories
         String createCategories = "CREATE TABLE " + TABLE_CATEGORIES + " ("
                 + C_COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + C_COL_NAME + " TEXT NOT NULL, "
                 + C_COL_TYPE + " TEXT NOT NULL"
                 + ");";
 
-        // Tạo bảng transactions
+        // Bảng transactions
         String createTransactions = "CREATE TABLE " + TABLE_TRANSACTIONS + " ("
                 + T_COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + T_COL_AMOUNT + " REAL NOT NULL, "
@@ -122,6 +122,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
+    public List<Category> getAllCategories() {
+        List<Category> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(TABLE_CATEGORIES,
+                new String[]{C_COL_ID, C_COL_NAME, C_COL_TYPE},
+                null, null, null, null, C_COL_NAME + " ASC");
+        if (c != null) {
+            while (c.moveToNext()) {
+                int id = c.getInt(c.getColumnIndexOrThrow(C_COL_ID));
+                String name = c.getString(c.getColumnIndexOrThrow(C_COL_NAME));
+                String t = c.getString(c.getColumnIndexOrThrow(C_COL_TYPE));
+                list.add(new Category(id, name, t));
+            }
+            c.close();
+        }
+        return list;
+    }
+
+    public List<String> getCategoryNames() {
+        List<String> names = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(TABLE_CATEGORIES,
+                new String[]{C_COL_NAME},
+                null, null, null, null, C_COL_NAME + " ASC");
+        if (c != null) {
+            while (c.moveToNext()) {
+                names.add(c.getString(c.getColumnIndexOrThrow(C_COL_NAME)));
+            }
+            c.close();
+        }
+        // thêm option "Tất cả" lên đầu
+        names.add(0, "Tất cả");
+        return names;
+    }
+
+
     // ---------- Transactions ----------
     public long insertTransaction(Transaction tx) {
         SQLiteDatabase db = getWritableDatabase();
@@ -134,6 +170,58 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(T_COL_DATE, tx.getDate());
         cv.put(T_COL_TYPE, tx.isIncome() ? "Income" : "Expense");
         return db.insert(TABLE_TRANSACTIONS, null, cv);
+    }
+
+    public List<Transaction> getFilteredTransactions(String fromDate, String toDate, String categoryName, String type) {
+        List<Transaction> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        StringBuilder query = new StringBuilder(
+                "SELECT t.id, t.note, t.date, t.amount, t.type, t.category_id, c.name as categoryName " +
+                        "FROM transactions t " +
+                        "LEFT JOIN categories c ON t.category_id = c.id " +
+                        "WHERE 1=1"
+        );
+        List<String> args = new ArrayList<>();
+
+        if (!fromDate.isEmpty()) {
+            query.append(" AND t.date >= ?");
+            args.add(fromDate);
+        }
+        if (!toDate.isEmpty()) {
+            query.append(" AND t.date <= ?");
+            args.add(toDate);
+        }
+        if (!type.isEmpty() && !type.equals("All")) {
+            query.append(" AND t.type = ?");
+            if (type.equalsIgnoreCase("Thu nhập") || type.equalsIgnoreCase("Income")) {
+                args.add("Income");
+            } else if (type.equalsIgnoreCase("Chi tiêu") || type.equalsIgnoreCase("Expense")) {
+                args.add("Expense");
+            }
+        }
+
+
+        Cursor c = db.rawQuery(query.toString(), args.toArray(new String[0]));
+        if (c.moveToFirst()) {
+            do {
+                Transaction t = new Transaction();
+                t.setId(c.getLong(c.getColumnIndexOrThrow("id")));
+                t.setNote(c.getString(c.getColumnIndexOrThrow("note")));
+                t.setDate(c.getString(c.getColumnIndexOrThrow("date")));
+                t.setAmount(c.getDouble(c.getColumnIndexOrThrow("amount")));
+
+                // Xác định là thu nhập hay chi tiêu
+                String txType = c.getString(c.getColumnIndexOrThrow("type"));
+                t.setIncome("Income".equals(txType));
+
+                t.setCategoryId(c.getInt(c.getColumnIndexOrThrow("category_id")));
+                t.setCategoryName(c.getString(c.getColumnIndexOrThrow("categoryName")));
+                list.add(t);
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
     }
 
     public boolean updateTransaction(Transaction tx) {
