@@ -1,12 +1,15 @@
 package com.example.expensemanagement;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -29,7 +32,7 @@ public class HomeFragment extends Fragment {
     private Button btnExpense, btnIncome;
     private DatabaseHelper dbHelper;
 
-    // thêm TextView để hiển thị số dư, thu, chi
+    // hiển thị số dư, thu, chi
     private TextView tvBalance, tvIncome, tvSpending;
 
     @Nullable
@@ -53,7 +56,24 @@ public class HomeFragment extends Fragment {
         dbHelper = DatabaseHelper.getInstance(requireContext());
 
         items = new ArrayList<>();
-        adapter = new TransactionAdapter(items);
+
+        // ✅ Truyền listener vào adapter
+        adapter = new TransactionAdapter(items, new TransactionAdapter.OnTransactionActionListener() {
+            @Override
+            public void onEdit(Transaction transaction) {
+                showEditDialog(transaction);
+            }
+
+            @Override
+            public void onDelete(Transaction transaction) {
+                confirmDelete(transaction, () -> {
+                    dbHelper.deleteTransaction(transaction.getId());
+                    loadTransactions();
+                    updateSummary();
+                });
+            }
+        });
+
         recyclerTransactions.setAdapter(adapter);
 
         loadTransactions();
@@ -105,9 +125,67 @@ public class HomeFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 100 && resultCode == Activity.RESULT_OK) {
-            // Sau khi thêm xong thì reload lại toàn bộ
             loadTransactions();
             updateSummary();
         }
+    }
+
+    // ✅ Hàm dùng chung để confirm trước khi xóa
+    private void confirmDelete(Transaction transaction, Runnable onDeleted) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Xác nhận xóa")
+                .setMessage("Bạn có chắc chắn muốn xóa giao dịch này?")
+                .setPositiveButton("Xóa", (d, which) -> {
+                    onDeleted.run();
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    // ✅ Dialog edit giao dịch
+    private void showEditDialog(Transaction transaction) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_edit_transaction, null);
+        builder.setView(dialogView);
+
+        EditText edtNote = dialogView.findViewById(R.id.edtNote);
+        EditText edtAmount = dialogView.findViewById(R.id.edtAmount);
+        EditText edtCategory = dialogView.findViewById(R.id.edtCategory);
+        Spinner spinnerType = dialogView.findViewById(R.id.spinnerType);
+        EditText edtDate = dialogView.findViewById(R.id.edtDate);
+        Button btnSave = dialogView.findViewById(R.id.btnSave);
+        Button btnDelete = dialogView.findViewById(R.id.btnDelete);
+
+        // Gán dữ liệu cũ
+        edtNote.setText(transaction.getNote());
+        edtAmount.setText(String.valueOf(transaction.getAmount()));
+        edtDate.setText(transaction.getDate());
+        // TODO: set spinner Category + Type
+
+        AlertDialog dialog = builder.create();
+
+        btnSave.setOnClickListener(v -> {
+            transaction.setNote(edtNote.getText().toString());
+            transaction.setAmount(Double.parseDouble(edtAmount.getText().toString()));
+            transaction.setDate(edtDate.getText().toString());
+            // TODO: set lại category + type từ spinner
+
+            dbHelper.updateTransaction(transaction);
+            loadTransactions();
+            updateSummary();
+            dialog.dismiss();
+        });
+
+        btnDelete.setOnClickListener(v -> {
+            confirmDelete(transaction, () -> {
+                dbHelper.deleteTransaction(transaction.getId());
+                loadTransactions();
+                updateSummary();
+                dialog.dismiss();
+            });
+        });
+
+        dialog.show();
     }
 }

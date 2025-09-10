@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- Ghi chú -->
+    <EditText
+        android:id="@+id/edtNote"
+        android:hint="Note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- Số tiền -->
+    <EditText
+        android:id="@+id/edtAmount"
+        android:hint="Amount"
+        android:inputType="numberDecimal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- Danh mục: cho nhập từ bàn phím -->
+    <EditText
+        android:id="@+id/edtCategory"
+        android:hint="Category"
+        android:inputType="textCapWords"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- Loại (Thu nhập / Chi tiêu) -->
+    <Spinner
+        android:id="@+id/spinnerType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- Ngày -->
+    <EditText
+        android:id="@+id/edtDate"
+        android:hint="Date (yyyy-MM-dd)"
+        android:focusable="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- Nút Save/Delete -->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp">
+
+        <Button
+            android:id="@+id/btnDelete"
+            android:text="DELETE"
+            android:textAllCaps="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnSave"
+            android:text="SAVE"
+            android:textAllCaps="true"
+            android:layout_marginStart="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</LinearLayout>

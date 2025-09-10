@@ -1,11 +1,11 @@
 package com.example.expensemanagement;
 
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,9 +18,17 @@ import java.util.List;
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TransactionViewHolder> {
 
     private List<Transaction> transactionList;
+    private OnTransactionActionListener listener;
 
-    public TransactionAdapter(List<Transaction> transactionList) {
+    // Interface cho Edit/Delete
+    public interface OnTransactionActionListener {
+        void onEdit(Transaction tx);
+        void onDelete(Transaction tx);
+    }
+
+    public TransactionAdapter(List<Transaction> transactionList, OnTransactionActionListener listener) {
         this.transactionList = transactionList;
+        this.listener = listener;
     }
 
     public void setData(List<Transaction> list) {
@@ -56,6 +64,15 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.txtAmount.setTextColor(holder.itemView.getResources().getColor(android.R.color.holo_red_dark));
             holder.iconType.setImageResource(R.drawable.ic_send); // icon bạn tự thêm
         }
+
+        // Sự kiện Edit/Delete
+        holder.btnEdit.setOnClickListener(v -> {
+            if (listener != null) listener.onEdit(tx);
+        });
+
+        holder.btnDelete.setOnClickListener(v -> {
+            if (listener != null) listener.onDelete(tx);
+        });
     }
 
     @Override
@@ -66,6 +83,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     public static class TransactionViewHolder extends RecyclerView.ViewHolder {
         TextView txtNote, txtDate, txtAmount, txtCategory;
         ImageView iconType;
+        ImageView btnEdit, btnDelete;
 
         public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -74,7 +92,9 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             txtAmount = itemView.findViewById(R.id.txtAmount);
             txtCategory = itemView.findViewById(R.id.txtCategory);
             iconType = itemView.findViewById(R.id.iconType);
+
+            btnEdit = itemView.findViewById(R.id.btnEdit);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }
 }
-

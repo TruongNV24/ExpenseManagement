@@ -157,6 +157,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return names;
     }
 
+    // Lấy tổng amount theo Category trong khoảng thời gian
+    public Map<String, Double> getExpenseSummaryByCategory(String startDate, String endDate) {
+        Map<String, Double> result = new HashMap<>();
+        SQLiteDatabase db = getReadableDatabase();
+
+        String sql = "SELECT c." + C_COL_NAME + " as category, SUM(t." + T_COL_AMOUNT + ") as total " +
+                "FROM " + TABLE_TRANSACTIONS + " t " +
+                "LEFT JOIN " + TABLE_CATEGORIES + " c ON t." + T_COL_CATEGORY_ID + " = c." + C_COL_ID + " " +
+                "WHERE t." + T_COL_DATE + " BETWEEN ? AND ? " +
+                "GROUP BY c." + C_COL_NAME;
+
+        Cursor cursor = db.rawQuery(sql, new String[]{startDate, endDate});
+        if (cursor.moveToFirst()) {
+            do {
+                String category = cursor.getString(cursor.getColumnIndexOrThrow("category"));
+                double total = cursor.getDouble(cursor.getColumnIndexOrThrow("total"));
+                result.put(category, total);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return result;
+    }
+
+
 
     // ---------- Transactions ----------
     public long insertTransaction(Transaction tx) {

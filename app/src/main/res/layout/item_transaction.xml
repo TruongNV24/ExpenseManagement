@@ -3,8 +3,10 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:gravity="center_vertical">
 
+    <!-- Icon loại giao dịch -->
     <ImageView
         android:id="@+id/iconType"
         android:layout_width="40dp"
@@ -12,6 +14,7 @@
         android:src="@drawable/ic_income"
         android:layout_marginEnd="12dp"/>
 
+    <!-- Thông tin giao dịch -->
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="0dp"
@@ -41,11 +44,32 @@
             android:layout_height="wrap_content"/>
     </LinearLayout>
 
+    <!-- Số tiền -->
     <TextView
         android:id="@+id/txtAmount"
         android:text="$0.00"
         android:textStyle="bold"
         android:textSize="16sp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"/>
+
+    <!-- Nút Edit -->
+    <ImageView
+        android:id="@+id/btnEdit"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@android:drawable/ic_menu_edit"
+        android:contentDescription="Edit"
+        android:padding="4dp"
+        android:layout_marginEnd="8dp"/>
+
+    <!-- Nút Delete -->
+    <ImageView
+        android:id="@+id/btnDelete"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="Delete"
+        android:padding="4dp"/>
 </LinearLayout>

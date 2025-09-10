@@ -1,5 +1,6 @@
 package com.example.expensemanagement;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -43,7 +44,6 @@ public class TransactionsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_transactions, container, false);
 
-        // Ánh xạ view
         rvTransactions = v.findViewById(R.id.rvTransactions);
         edtFromDate = v.findViewById(R.id.edtFromDate);
         edtToDate = v.findViewById(R.id.edtToDate);
@@ -56,29 +56,40 @@ public class TransactionsFragment extends Fragment {
         dbHelper = DatabaseHelper.getInstance(requireContext());
 
         items = new ArrayList<>();
-        adapter = new TransactionAdapter(items);
+        adapter = new TransactionAdapter(items, new TransactionAdapter.OnTransactionActionListener() {
+            @Override
+            public void onEdit(Transaction transaction) {
+                showEditDialog(transaction);
+            }
+
+            @Override
+            public void onDelete(Transaction transaction) {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Xác nhận")
+                        .setMessage("Bạn có chắc muốn xóa giao dịch này?")
+                        .setPositiveButton("Xóa", (dialog, which) -> {
+                            dbHelper.deleteTransaction(transaction.getId());
+                            loadTransactions();
+                        })
+                        .setNegativeButton("Hủy", null)
+                        .show();
+            }
+        });
         rvTransactions.setAdapter(adapter);
 
-        // Khởi tạo dữ liệu cho Spinner
         setupSpinners();
-
-        // Load tất cả giao dịch ban đầu
         loadTransactions();
 
-        // Chọn ngày bằng DatePicker
         edtFromDate.setOnClickListener(v1 -> showDatePickerDialog(edtFromDate));
         edtToDate.setOnClickListener(v2 -> showDatePickerDialog(edtToDate));
-
-        // Xử lý khi bấm nút Lọc
         btnFilter.setOnClickListener(v3 -> applyFilters());
 
         return v;
     }
 
     private void setupSpinners() {
-        // Spinner Category (lấy từ DB)
         List<String> categories = new ArrayList<>();
-        categories.add("All"); // ✅ dùng "All" thay vì "Tất cả"
+        categories.add("All");
         categories.addAll(dbHelper.getCategoryNames());
 
         ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(
@@ -89,9 +100,8 @@ public class TransactionsFragment extends Fragment {
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(categoryAdapter);
 
-        // Spinner Type (Income/Expense)
         List<String> types = new ArrayList<>();
-        types.add("All");      // ✅ đồng bộ với query
+        types.add("All");
         types.add("Income");
         types.add("Expense");
 
@@ -136,4 +146,65 @@ public class TransactionsFragment extends Fragment {
                 }, year, month, day);
         datePickerDialog.show();
     }
+
+    private void showEditDialog(Transaction tx) {
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_edit_transaction, null);
+
+        EditText edtNote = dialogView.findViewById(R.id.edtNote);
+        EditText edtAmount = dialogView.findViewById(R.id.edtAmount);
+        EditText edtCategory = dialogView.findViewById(R.id.edtCategory);
+        EditText edtDate = dialogView.findViewById(R.id.edtDate);
+        Spinner spinnerType = dialogView.findViewById(R.id.spinnerType);
+        Button btnSave = dialogView.findViewById(R.id.btnSave);
+        Button btnDelete = dialogView.findViewById(R.id.btnDelete);
+
+        // Gán dữ liệu hiện tại
+        edtNote.setText(tx.getNote());
+        edtAmount.setText(String.valueOf(tx.getAmount()));
+        edtCategory.setText(tx.getCategoryName());
+        edtDate.setText(tx.getDate());
+
+        // Setup spinner Type
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                new String[]{"Income", "Expense"}
+        );
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType.setAdapter(typeAdapter);
+        spinnerType.setSelection(tx.isIncome() ? 0 : 1);
+
+        // Date picker
+        edtDate.setOnClickListener(v -> showDatePickerDialog(edtDate));
+
+        // Tạo dialog
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Sửa giao dịch")
+                .setView(dialogView)
+                .create();
+
+        // Xử lý Save
+        btnSave.setOnClickListener(v -> {
+            tx.setNote(edtNote.getText().toString().trim());
+            tx.setAmount(Double.parseDouble(edtAmount.getText().toString().trim()));
+            tx.setCategoryName(edtCategory.getText().toString().trim());
+            tx.setIncome(spinnerType.getSelectedItem().toString().equals("Income"));
+            tx.setDate(edtDate.getText().toString().trim());
+
+            dbHelper.updateTransaction(tx);
+            loadTransactions();
+            dialog.dismiss();
+        });
+
+        // Xử lý Delete
+        btnDelete.setOnClickListener(v -> {
+            dbHelper.deleteTransaction(tx.getId());
+            loadTransactions();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
 }
