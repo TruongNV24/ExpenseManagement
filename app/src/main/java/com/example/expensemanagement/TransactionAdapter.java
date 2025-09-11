@@ -58,11 +58,11 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         if (tx.isIncome()) {
             holder.txtAmount.setText("+ " + amountStr);
             holder.txtAmount.setTextColor(holder.itemView.getResources().getColor(android.R.color.holo_green_dark));
-            holder.iconType.setImageResource(R.drawable.ic_income); // icon bạn tự thêm
+            holder.iconType.setImageResource(R.drawable.ic_income);
         } else {
             holder.txtAmount.setText("- " + amountStr);
             holder.txtAmount.setTextColor(holder.itemView.getResources().getColor(android.R.color.holo_red_dark));
-            holder.iconType.setImageResource(R.drawable.ic_send); // icon bạn tự thêm
+            holder.iconType.setImageResource(R.drawable.ic_spending);
         }
 
         // Sự kiện Edit/Delete

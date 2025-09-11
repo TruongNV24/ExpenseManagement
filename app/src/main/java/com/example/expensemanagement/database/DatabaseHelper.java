@@ -158,27 +158,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // Lấy tổng amount theo Category trong khoảng thời gian
-    public Map<String, Double> getExpenseSummaryByCategory(String startDate, String endDate) {
-        Map<String, Double> result = new HashMap<>();
-        SQLiteDatabase db = getReadableDatabase();
+    // Thống kê tổng chi tiêu theo danh mục trong khoảng thời gian
+    public Map<String, Double> getExpenseSummaryByCategory(String type, String fromDate, String toDate) {
+        Map<String, Double> map = new HashMap<>();
+        SQLiteDatabase db = this.getReadableDatabase();
 
-        String sql = "SELECT c." + C_COL_NAME + " as category, SUM(t." + T_COL_AMOUNT + ") as total " +
+        String sql = "SELECT c.name, SUM(t.amount) as total " +
                 "FROM " + TABLE_TRANSACTIONS + " t " +
-                "LEFT JOIN " + TABLE_CATEGORIES + " c ON t." + T_COL_CATEGORY_ID + " = c." + C_COL_ID + " " +
-                "WHERE t." + T_COL_DATE + " BETWEEN ? AND ? " +
-                "GROUP BY c." + C_COL_NAME;
+                "LEFT JOIN " + TABLE_CATEGORIES + " c ON t.category_id = c.id " +
+                "WHERE t.type = ? " +
+                "AND t.date >= ? AND t.date <= ? " +
+                "GROUP BY c.name";
 
-        Cursor cursor = db.rawQuery(sql, new String[]{startDate, endDate});
+        Cursor cursor = db.rawQuery(sql, new String[]{type, fromDate, toDate});
         if (cursor.moveToFirst()) {
             do {
-                String category = cursor.getString(cursor.getColumnIndexOrThrow("category"));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
                 double total = cursor.getDouble(cursor.getColumnIndexOrThrow("total"));
-                result.put(category, total);
+                map.put(name, total);
             } while (cursor.moveToNext());
         }
         cursor.close();
-        return result;
+        return map;
     }
+
+
 
 
 
@@ -317,4 +321,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         map.put("balance", totalIncome - totalExpense);
         return map;
     }
+
+    // ✅ Tính tổng theo loại giao dịch (Income/Expense) trong khoảng thời gian
+    public double getTotalByTypeInRange(String type, String startDate, String endDate) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        double total = 0;
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery(
+                    "SELECT SUM(amount) FROM transactions WHERE type = ? AND date BETWEEN ? AND ?",
+                    new String[]{type, startDate, endDate}
+            );
+            if (cursor.moveToFirst()) {
+                total = cursor.getDouble(0);
+            }
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return total;
+    }
+
 }

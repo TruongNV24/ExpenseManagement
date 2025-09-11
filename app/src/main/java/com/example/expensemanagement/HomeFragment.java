@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -142,7 +143,7 @@ public class HomeFragment extends Fragment {
                 .show();
     }
 
-    // ✅ Dialog edit giao dịch
+    // ✅ Dialog edit giao dịch (đã fix hiển thị type)
     private void showEditDialog(Transaction transaction) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         View dialogView = LayoutInflater.from(requireContext())
@@ -160,16 +161,30 @@ public class HomeFragment extends Fragment {
         // Gán dữ liệu cũ
         edtNote.setText(transaction.getNote());
         edtAmount.setText(String.valueOf(transaction.getAmount()));
+        edtCategory.setText(transaction.getCategoryName());
         edtDate.setText(transaction.getDate());
-        // TODO: set spinner Category + Type
+
+        // ✅ setup spinner Income/Expense
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                new String[]{"Income", "Expense"}
+        );
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType.setAdapter(typeAdapter);
+
+        // ✅ chọn đúng type của transaction
+        spinnerType.setSelection(transaction.isIncome() ? 0 : 1);
 
         AlertDialog dialog = builder.create();
 
         btnSave.setOnClickListener(v -> {
             transaction.setNote(edtNote.getText().toString());
             transaction.setAmount(Double.parseDouble(edtAmount.getText().toString()));
+            transaction.setCategoryName(edtCategory.getText().toString());
             transaction.setDate(edtDate.getText().toString());
-            // TODO: set lại category + type từ spinner
+            // ✅ update type từ spinner
+            transaction.setIncome(spinnerType.getSelectedItem().toString().equals("Income"));
 
             dbHelper.updateTransaction(transaction);
             loadTransactions();
