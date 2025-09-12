@@ -41,7 +41,6 @@ public class StatisticsFragment extends Fragment {
     private RecyclerView recyclerView;
     private CategoryAdapter categoryAdapter;
 
-    // Tổng quan
     private TextView tvExpense, tvIncome, tvBalance;
 
     private Calendar selectedMonth;
@@ -71,16 +70,13 @@ public class StatisticsFragment extends Fragment {
         categoryAdapter = new CategoryAdapter();
         recyclerView.setAdapter(categoryAdapter);
 
-        // Ánh xạ TextView tổng quan
         tvExpense = view.findViewById(R.id.tvExpense);
         tvIncome = view.findViewById(R.id.tvIncome);
         tvBalance = view.findViewById(R.id.tvBalance);
 
-        // Default month
         selectedMonth = Calendar.getInstance();
         updateMonthLabels();
 
-        // Default tab: Expense
         setActiveTab(true);
         loadPieChartData(true);
         updateSummary();
@@ -203,12 +199,12 @@ public class StatisticsFragment extends Fragment {
         }
 
         if (entries.isEmpty()) {
-            entries.add(new PieEntry(1f, "Không có dữ liệu"));
+            entries.add(new PieEntry(1f, "No data avaiable"));
         }
 
         categoryAdapter.submitList(listItems);
 
-        PieDataSet dataSet = new PieDataSet(entries, isExpense ? "Chi tiêu" : "Thu nhập");
+        PieDataSet dataSet = new PieDataSet(entries, isExpense ? "Expense" : "Income");
         dataSet.setColors(new int[]{
                 Color.rgb(244, 67, 54),
                 Color.rgb(33, 150, 243),
@@ -230,7 +226,7 @@ public class StatisticsFragment extends Fragment {
         pieChart.setHoleRadius(45f);
         pieChart.setTransparentCircleRadius(50f);
 
-        String centerText = (isExpense ? "Tổng chi:\n" : "Tổng thu:\n") + String.format("$%,.2f", total);
+        String centerText = (isExpense ? "Total Expense:\n" : "Total Income:\n") + String.format("$%,.2f", total);
         pieChart.setCenterText(centerText);
         pieChart.setCenterTextSize(14f);
         pieChart.setCenterTextColor(Color.BLACK);

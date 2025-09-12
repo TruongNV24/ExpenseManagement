@@ -65,13 +65,13 @@ public class TransactionsFragment extends Fragment {
             @Override
             public void onDelete(Transaction transaction) {
                 new AlertDialog.Builder(requireContext())
-                        .setTitle("Xác nhận")
-                        .setMessage("Bạn có chắc muốn xóa giao dịch này?")
-                        .setPositiveButton("Xóa", (dialog, which) -> {
+                        .setTitle("Confirm")
+                        .setMessage("Are you sure you want to delete this transaction?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
                             dbHelper.deleteTransaction(transaction.getId());
                             loadTransactions();
                         })
-                        .setNegativeButton("Hủy", null)
+                        .setNegativeButton("Cancel", null)
                         .show();
             }
         });
@@ -159,13 +159,11 @@ public class TransactionsFragment extends Fragment {
         Button btnSave = dialogView.findViewById(R.id.btnSave);
         Button btnDelete = dialogView.findViewById(R.id.btnDelete);
 
-        // Gán dữ liệu hiện tại
         edtNote.setText(tx.getNote());
         edtAmount.setText(String.valueOf(tx.getAmount()));
         edtCategory.setText(tx.getCategoryName());
         edtDate.setText(tx.getDate());
 
-        // Setup spinner Type
         ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
@@ -175,16 +173,13 @@ public class TransactionsFragment extends Fragment {
         spinnerType.setAdapter(typeAdapter);
         spinnerType.setSelection(tx.isIncome() ? 0 : 1);
 
-        // Date picker
         edtDate.setOnClickListener(v -> showDatePickerDialog(edtDate));
 
-        // Tạo dialog
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setTitle("Sửa giao dịch")
+                .setTitle("Edit transaction")
                 .setView(dialogView)
                 .create();
 
-        // Xử lý Save
         btnSave.setOnClickListener(v -> {
             tx.setNote(edtNote.getText().toString().trim());
             tx.setAmount(Double.parseDouble(edtAmount.getText().toString().trim()));
@@ -197,7 +192,6 @@ public class TransactionsFragment extends Fragment {
             dialog.dismiss();
         });
 
-        // Xử lý Delete
         btnDelete.setOnClickListener(v -> {
             dbHelper.deleteTransaction(tx.getId());
             loadTransactions();

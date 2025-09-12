@@ -5,14 +5,12 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Back button -->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="wrap_content"
@@ -21,27 +19,24 @@
             android:src="@android:drawable/ic_media_previous"
             android:contentDescription="Back" />
 
-        <!-- Title -->
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="330dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="GIAO DỊCH"
-            android:textStyle="bold"
-            android:textSize="20sp" />
+            android:text="ADD TRANSACTION"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-        <!-- Plus button -->
         <ImageButton
             android:id="@+id/btnAdd"
-            android:layout_width="wrap_content"
+            android:layout_width="2dp"
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_input_add"
-            android:contentDescription="Add" />
+            android:contentDescription="Add"
+            android:src="@android:drawable/ic_input_add" />
     </LinearLayout>
 
-    <!-- Type (Income / Expense) -->
     <RadioGroup
         android:id="@+id/radioGroupType"
         android:layout_width="match_parent"
@@ -62,7 +57,6 @@
             android:text="Add Expense" />
     </RadioGroup>
 
-    <!-- Amount -->
     <EditText
         android:id="@+id/edtAmount"
         android:layout_width="match_parent"
@@ -71,7 +65,6 @@
         android:inputType="numberDecimal"
         android:layout_marginTop="16dp"/>
 
-    <!-- Category -->
     <EditText
         android:id="@+id/edtCategory"
         android:layout_width="match_parent"
@@ -79,7 +72,6 @@
         android:hint="Category"
         android:layout_marginTop="12dp"/>
 
-    <!-- Note -->
     <EditText
         android:id="@+id/edtNote"
         android:layout_width="match_parent"
@@ -87,7 +79,6 @@
         android:hint="Note"
         android:layout_marginTop="12dp"/>
 
-    <!-- Date -->
     <EditText
         android:id="@+id/edtDate"
         android:layout_width="match_parent"
@@ -96,7 +87,6 @@
         android:hint="Select Date"
         android:layout_marginTop="12dp"/>
 
-    <!-- Save + Cancel -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

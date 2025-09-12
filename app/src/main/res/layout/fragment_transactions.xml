@@ -6,83 +6,99 @@
     android:padding="12dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white">
+    android:background="#F5F7FA">
 
-    <!-- Thanh lọc dữ liệu -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Transaction History"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:layout_marginBottom="8dp"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="8dp">
 
-        <!-- Khối chọn khoảng thời gian -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="6dp"
+            app:cardElevation="4dp"
             android:padding="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:weightSum="2">
+                android:weightSum="2"
+                android:gravity="center_vertical">
 
                 <EditText
                     android:id="@+id/edtFromDate"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="Từ ngày"
+                    android:hint="From date"
                     android:focusable="false"
-                    android:padding="8dp"/>
+                    android:padding="10dp"
+                    android:background="@android:drawable/edit_text"
+                    android:textColor="@android:color/black"/>
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
 
                 <EditText
                     android:id="@+id/edtToDate"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="Đến ngày"
+                    android:hint="To date"
                     android:focusable="false"
-                    android:padding="8dp"/>
+                    android:padding="10dp"
+                    android:background="@android:drawable/edit_text"
+                    android:textColor="@android:color/black"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Khối chọn danh mục -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="6dp"
+            app:cardElevation="4dp"
             android:padding="8dp">
 
             <Spinner
                 android:id="@+id/spinnerCategory"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
+                android:background="@android:drawable/btn_dropdown"
                 android:prompt="@string/category"/>
         </androidx.cardview.widget.CardView>
 
-        <!-- Khối chọn loại giao dịch -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="6dp"
+            app:cardElevation="4dp"
             android:padding="8dp">
 
             <Spinner
                 android:id="@+id/spinnerType"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
+                android:background="@android:drawable/btn_dropdown"
                 android:prompt="@string/transaction_type"/>
         </androidx.cardview.widget.CardView>
 
-        <!-- Nút lọc -->
         <Button
             android:id="@+id/btnFilter"
             android:layout_width="wrap_content"
@@ -90,13 +106,16 @@
             android:text="Lọc"
             android:backgroundTint="@color/purple_700"
             android:textColor="@android:color/white"
-            android:layout_gravity="center_horizontal"/>
+            android:layout_gravity="center_horizontal"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="8dp"
+            android:layout_marginTop="4dp"/>
     </LinearLayout>
 
-    <!-- Danh sách giao dịch -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTransactions"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:paddingTop="4dp"/>
 </LinearLayout>

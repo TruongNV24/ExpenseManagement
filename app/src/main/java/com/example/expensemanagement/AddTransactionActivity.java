@@ -25,7 +25,6 @@ public class AddTransactionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_transaction);
 
-        // Ánh xạ view
         edtAmount = findViewById(R.id.edtAmount);
         edtNote = findViewById(R.id.edtNote);
         edtDate = findViewById(R.id.edtDate);
@@ -38,7 +37,6 @@ public class AddTransactionActivity extends AppCompatActivity {
 
         dbHelper = DatabaseHelper.getInstance(this);
 
-        // ✅ Nhận type từ Intent và set RadioButton tương ứng
         String type = getIntent().getStringExtra("type");
         if (type != null) {
             if (type.equals("Income")) {
@@ -48,7 +46,6 @@ public class AddTransactionActivity extends AppCompatActivity {
             }
         }
 
-        // Date Picker -> Lưu theo yyyy-MM-dd
         edtDate.setOnClickListener(v -> {
             Calendar c = Calendar.getInstance();
             new DatePickerDialog(this, (view, year, month, day) -> {
@@ -59,13 +56,10 @@ public class AddTransactionActivity extends AppCompatActivity {
             }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
         });
 
-        // Nút Back
         btnBack.setOnClickListener(v -> finish());
 
-        // Nút Cancel
         btnCancel.setOnClickListener(v -> finish());
 
-        // Nút Save
         btnSave.setOnClickListener(v -> {
             String amountStr = edtAmount.getText().toString().trim();
             String note = edtNote.getText().toString().trim();
@@ -79,14 +73,11 @@ public class AddTransactionActivity extends AppCompatActivity {
 
             double amount = Double.parseDouble(amountStr);
 
-            // Xác định loại giao dịch
             boolean isIncome = (radioGroupType.getCheckedRadioButtonId() == R.id.radioIncome);
             String typeTx = isIncome ? "Income" : "Expense";
 
-            // ✅ Insert Category nếu chưa có
             long categoryId = dbHelper.insertCategoryIfNotExists(categoryName, typeTx);
 
-            // ✅ Tạo Transaction và insert DB
             Transaction transaction = new Transaction(0, note, date, amount, isIncome, (int) categoryId, categoryName);
             long newId = dbHelper.insertTransaction(transaction);
 
@@ -99,7 +90,6 @@ public class AddTransactionActivity extends AppCompatActivity {
             }
         });
 
-        // Nút Add (optional)
         btnAdd.setOnClickListener(v ->
                 Toast.makeText(this, "Add button clicked", Toast.LENGTH_SHORT).show()
         );

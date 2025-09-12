@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ExpenseManager</string>
+    <string name="app_name">Expense Manager</string>
     <string name="nav_home">Home</string>
     <string name="nav_transactions">Transactions</string>
     <string name="nav_add">Add</string>

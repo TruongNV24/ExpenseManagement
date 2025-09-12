@@ -33,7 +33,6 @@ public class HomeFragment extends Fragment {
     private Button btnExpense, btnIncome;
     private DatabaseHelper dbHelper;
 
-    // hiển thị số dư, thu, chi
     private TextView tvBalance, tvIncome, tvSpending;
 
     @Nullable
@@ -58,7 +57,6 @@ public class HomeFragment extends Fragment {
 
         items = new ArrayList<>();
 
-        // ✅ Truyền listener vào adapter
         adapter = new TransactionAdapter(items, new TransactionAdapter.OnTransactionActionListener() {
             @Override
             public void onEdit(Transaction transaction) {
@@ -131,19 +129,18 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // ✅ Hàm dùng chung để confirm trước khi xóa
     private void confirmDelete(Transaction transaction, Runnable onDeleted) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Xác nhận xóa")
-                .setMessage("Bạn có chắc chắn muốn xóa giao dịch này?")
-                .setPositiveButton("Xóa", (d, which) -> {
+                .setTitle("Confirm")
+                .setMessage("\n" +
+                        "Are you sure you want to delete this transaction?")
+                .setPositiveButton("Delete", (d, which) -> {
                     onDeleted.run();
                 })
-                .setNegativeButton("Hủy", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    // ✅ Dialog edit giao dịch (đã fix hiển thị type)
     private void showEditDialog(Transaction transaction) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         View dialogView = LayoutInflater.from(requireContext())
@@ -158,13 +155,11 @@ public class HomeFragment extends Fragment {
         Button btnSave = dialogView.findViewById(R.id.btnSave);
         Button btnDelete = dialogView.findViewById(R.id.btnDelete);
 
-        // Gán dữ liệu cũ
         edtNote.setText(transaction.getNote());
         edtAmount.setText(String.valueOf(transaction.getAmount()));
         edtCategory.setText(transaction.getCategoryName());
         edtDate.setText(transaction.getDate());
 
-        // ✅ setup spinner Income/Expense
         ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
@@ -173,7 +168,6 @@ public class HomeFragment extends Fragment {
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerType.setAdapter(typeAdapter);
 
-        // ✅ chọn đúng type của transaction
         spinnerType.setSelection(transaction.isIncome() ? 0 : 1);
 
         AlertDialog dialog = builder.create();
@@ -183,7 +177,6 @@ public class HomeFragment extends Fragment {
             transaction.setAmount(Double.parseDouble(edtAmount.getText().toString()));
             transaction.setCategoryName(edtCategory.getText().toString());
             transaction.setDate(edtDate.getText().toString());
-            // ✅ update type từ spinner
             transaction.setIncome(spinnerType.getSelectedItem().toString().equals("Income"));
 
             dbHelper.updateTransaction(transaction);

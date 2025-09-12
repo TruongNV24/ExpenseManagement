@@ -20,7 +20,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private List<Transaction> transactionList;
     private OnTransactionActionListener listener;
 
-    // Interface cho Edit/Delete
     public interface OnTransactionActionListener {
         void onEdit(Transaction tx);
         void onDelete(Transaction tx);
@@ -53,7 +52,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.txtDate.setText(tx.getDate());
         holder.txtCategory.setText(tx.getCategoryName() != null ? tx.getCategoryName() : "Unknown");
 
-        // Format số tiền
         String amountStr = String.format("%.2f", tx.getAmount());
         if (tx.isIncome()) {
             holder.txtAmount.setText("+ " + amountStr);
@@ -65,7 +63,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.iconType.setImageResource(R.drawable.ic_spending);
         }
 
-        // Sự kiện Edit/Delete
         holder.btnEdit.setOnClickListener(v -> {
             if (listener != null) listener.onEdit(tx);
         });

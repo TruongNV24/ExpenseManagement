@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -30,7 +29,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Balance -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardBalance"
             android:layout_width="match_parent"
@@ -67,7 +65,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Quick actions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -102,7 +99,6 @@
                 app:iconTint="@android:color/white" />
         </LinearLayout>
 
-        <!-- Overview header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -128,7 +124,6 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Overview cards -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -216,14 +211,12 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="20dp"
             android:background="#DDDDDD" />
 
-        <!-- Recent Transactions -->
         <TextView
             android:id="@+id/tvRecent"
             android:layout_width="wrap_content"

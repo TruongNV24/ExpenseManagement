@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Lớp quản lý SQLite Database
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "expense_db";
@@ -20,7 +19,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_TRANSACTIONS = "transactions";
     private static final String TABLE_CATEGORIES = "categories";
 
-    // Transactions columns
     private static final String T_COL_ID = "id";
     private static final String T_COL_AMOUNT = "amount";
     private static final String T_COL_NOTE = "note";
@@ -28,7 +26,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String T_COL_DATE = "date";
     private static final String T_COL_TYPE = "type"; // Income / Expense
 
-    // Categories columns
     private static final String C_COL_ID = "id";
     private static final String C_COL_NAME = "name";
     private static final String C_COL_TYPE = "type"; // Income / Expense
@@ -48,14 +45,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Bảng categories
         String createCategories = "CREATE TABLE " + TABLE_CATEGORIES + " ("
                 + C_COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + C_COL_NAME + " TEXT NOT NULL, "
                 + C_COL_TYPE + " TEXT NOT NULL"
                 + ");";
 
-        // Bảng transactions
         String createTransactions = "CREATE TABLE " + TABLE_TRANSACTIONS + " ("
                 + T_COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + T_COL_AMOUNT + " REAL NOT NULL, "
@@ -69,7 +64,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createCategories);
         db.execSQL(createTransactions);
 
-        // Dữ liệu mặc định
         db.execSQL("INSERT INTO " + TABLE_CATEGORIES + "(" + C_COL_NAME + "," + C_COL_TYPE + ") VALUES('Food','Expense')");
         db.execSQL("INSERT INTO " + TABLE_CATEGORIES + "(" + C_COL_NAME + "," + C_COL_TYPE + ") VALUES('Shopping','Expense')");
         db.execSQL("INSERT INTO " + TABLE_CATEGORIES + "(" + C_COL_NAME + "," + C_COL_TYPE + ") VALUES('Salary','Income')");
@@ -82,7 +76,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // ---------- Categories ----------
     public long insertCategoryIfNotExists(String name, String type) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.query(TABLE_CATEGORIES, new String[]{C_COL_ID},
@@ -143,22 +136,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<String> getCategoryNames() {
         List<String> names = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.query(TABLE_CATEGORIES,
-                new String[]{C_COL_NAME},
-                null, null, null, null, C_COL_NAME + " ASC");
-        if (c != null) {
-            while (c.moveToNext()) {
-                names.add(c.getString(c.getColumnIndexOrThrow(C_COL_NAME)));
+        Cursor c = null;
+        try {
+            c = db.query(
+                    TABLE_CATEGORIES,
+                    new String[]{C_COL_NAME},
+                    null,
+                    null,
+                    null,
+                    null,
+                    C_COL_NAME + " ASC"
+            );
+            if (c != null && c.moveToFirst()) {
+                do {
+                    names.add(c.getString(c.getColumnIndexOrThrow(C_COL_NAME)));
+                } while (c.moveToNext());
             }
-            c.close();
+        } finally {
+            if (c != null) c.close();
         }
-        // thêm option "Tất cả" lên đầu
-        names.add(0, "Tất cả");
         return names;
     }
 
-    // Lấy tổng amount theo Category trong khoảng thời gian
-    // Thống kê tổng chi tiêu theo danh mục trong khoảng thời gian
     public Map<String, Double> getExpenseSummaryByCategory(String type, String fromDate, String toDate) {
         Map<String, Double> map = new HashMap<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -186,7 +185,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
 
-    // ---------- Transactions ----------
     public long insertTransaction(Transaction tx) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -220,15 +218,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             query.append(" AND t.date <= ?");
             args.add(toDate);
         }
+        if (!categoryName.isEmpty() && !categoryName.equals("All")) {
+            query.append(" AND c.name = ?");
+            args.add(categoryName);
+        }
         if (!type.isEmpty() && !type.equals("All")) {
             query.append(" AND t.type = ?");
-            if (type.equalsIgnoreCase("Thu nhập") || type.equalsIgnoreCase("Income")) {
-                args.add("Income");
-            } else if (type.equalsIgnoreCase("Chi tiêu") || type.equalsIgnoreCase("Expense")) {
-                args.add("Expense");
-            }
+            args.add(type.equalsIgnoreCase("Income") ? "Income" : "Expense");
         }
 
+        query.append(" ORDER BY t.date DESC, t.id DESC");
 
         Cursor c = db.rawQuery(query.toString(), args.toArray(new String[0]));
         if (c.moveToFirst()) {
@@ -239,7 +238,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 t.setDate(c.getString(c.getColumnIndexOrThrow("date")));
                 t.setAmount(c.getDouble(c.getColumnIndexOrThrow("amount")));
 
-                // Xác định là thu nhập hay chi tiêu
                 String txType = c.getString(c.getColumnIndexOrThrow("type"));
                 t.setIncome("Income".equals(txType));
 
@@ -251,6 +249,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         c.close();
         return list;
     }
+
 
     public boolean updateTransaction(Transaction tx) {
         SQLiteDatabase db = getWritableDatabase();
@@ -266,9 +265,59 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public boolean deleteTransaction(long id) {
         SQLiteDatabase db = getWritableDatabase();
+
+        int categoryId = -1;
+        Cursor cursor = db.query(
+                TABLE_TRANSACTIONS,
+                new String[]{T_COL_CATEGORY_ID},
+                T_COL_ID + "=?",
+                new String[]{String.valueOf(id)},
+                null, null, null
+        );
+        if (cursor != null && cursor.moveToFirst()) {
+            categoryId = cursor.getInt(cursor.getColumnIndexOrThrow(T_COL_CATEGORY_ID));
+            cursor.close();
+        }
+
         int rows = db.delete(TABLE_TRANSACTIONS, T_COL_ID + "=?", new String[]{String.valueOf(id)});
+
+        if (rows > 0 && categoryId > 0) {
+            Cursor c = db.query(
+                    TABLE_TRANSACTIONS,
+                    new String[]{T_COL_ID},
+                    T_COL_CATEGORY_ID + "=?",
+                    new String[]{String.valueOf(categoryId)},
+                    null, null, null
+            );
+            boolean hasOtherTx = (c != null && c.moveToFirst());
+            if (c != null) c.close();
+
+            if (!hasOtherTx) {
+                Cursor catCursor = db.query(
+                        TABLE_CATEGORIES,
+                        new String[]{C_COL_NAME},
+                        C_COL_ID + "=?",
+                        new String[]{String.valueOf(categoryId)},
+                        null, null, null
+                );
+                String catName = null;
+                if (catCursor != null && catCursor.moveToFirst()) {
+                    catName = catCursor.getString(catCursor.getColumnIndexOrThrow(C_COL_NAME));
+                    catCursor.close();
+                }
+
+                if (catName != null &&
+                        !catName.equalsIgnoreCase("Food") &&
+                        !catName.equalsIgnoreCase("Shopping") &&
+                        !catName.equalsIgnoreCase("Salary")) {
+                    db.delete(TABLE_CATEGORIES, C_COL_ID + "=?", new String[]{String.valueOf(categoryId)});
+                }
+            }
+        }
+
         return rows > 0;
     }
+
 
     public List<Transaction> getAllTransactions() {
         List<Transaction> list = new ArrayList<>();
@@ -297,7 +346,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-    // Tính tổng Income / Expense / Balance
     public Map<String, Double> getSummary() {
         Map<String, Double> map = new HashMap<>();
         SQLiteDatabase db = getReadableDatabase();
@@ -322,7 +370,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return map;
     }
 
-    // ✅ Tính tổng theo loại giao dịch (Income/Expense) trong khoảng thời gian
     public double getTotalByTypeInRange(String type, String startDate, String endDate) {
         SQLiteDatabase db = this.getReadableDatabase();
         double total = 0;
