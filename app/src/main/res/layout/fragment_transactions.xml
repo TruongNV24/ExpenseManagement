@@ -28,27 +28,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            android:padding="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:padding="8dp">
+            app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:weightSum="2"
-                android:gravity="center_vertical">
+                android:weightSum="2">
 
                 <EditText
                     android:id="@+id/edtFromDate"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="From date"
-                    android:focusable="false"
-                    android:padding="10dp"
+                    android:layout_weight="1"
                     android:background="@android:drawable/edit_text"
-                    android:textColor="@android:color/black"/>
+                    android:focusable="false"
+                    android:hint="From date"
+                    android:padding="10dp"
+                    android:textColor="@android:color/black" />
 
                 <View
                     android:layout_width="8dp"
@@ -57,13 +57,13 @@
                 <EditText
                     android:id="@+id/edtToDate"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="To date"
-                    android:focusable="false"
-                    android:padding="10dp"
+                    android:layout_weight="1"
                     android:background="@android:drawable/edit_text"
-                    android:textColor="@android:color/black"/>
+                    android:focusable="false"
+                    android:hint="To date"
+                    android:padding="10dp"
+                    android:textColor="@android:color/black" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -71,45 +71,63 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            android:padding="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:padding="8dp">
+            app:cardElevation="4dp">
+
+            <TextView
+                android:layout_width="76dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="14dp"
+                android:gravity="center_vertical"
+                android:text="Category"
+                android:textSize="16sp" />
 
             <Spinner
                 android:id="@+id/spinnerCategory"
-                android:layout_width="match_parent"
+                android:layout_width="295dp"
                 android:layout_height="40dp"
+                android:layout_gravity="end"
                 android:background="@android:drawable/btn_dropdown"
-                android:prompt="@string/category"/>
+                android:prompt="@string/category" />
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            android:padding="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:padding="8dp">
+            app:cardElevation="4dp">
+
+            <TextView
+                android:layout_width="79dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="14dp"
+                android:gravity="center_vertical"
+                android:text="Type"
+                android:textSize="16sp" />
 
             <Spinner
                 android:id="@+id/spinnerType"
-                android:layout_width="match_parent"
+                android:layout_width="295dp"
                 android:layout_height="40dp"
+                android:layout_gravity="end"
                 android:background="@android:drawable/btn_dropdown"
-                android:prompt="@string/transaction_type"/>
+                android:prompt="@string/transaction_type" />
         </androidx.cardview.widget.CardView>
 
         <Button
             android:id="@+id/btnFilter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lọc"
-            android:backgroundTint="@color/purple_700"
-            android:textColor="@android:color/white"
             android:layout_gravity="center_horizontal"
+            android:layout_marginTop="4dp"
+            android:backgroundTint="@color/purple_700"
             android:paddingHorizontal="24dp"
             android:paddingVertical="8dp"
-            android:layout_marginTop="4dp"/>
+            android:text="Lọc"
+            android:textColor="@android:color/white" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
