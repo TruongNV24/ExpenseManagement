@@ -1,16 +1,11 @@
 package com.example.expensemanagement;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.DatePicker;
-import android.widget.EditText;
-import android.widget.Spinner;
+import android.widget.*;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,8 +13,12 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.expensemanagement.database.DatabaseHelper;
+import com.example.expensemanagement.database.FirestoreHelper;
 import com.example.expensemanagement.database.Transaction;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -35,7 +34,7 @@ public class TransactionsFragment extends Fragment {
     private Spinner spinnerCategory, spinnerType;
     private Button btnFilter;
 
-    private DatabaseHelper dbHelper;
+    private FirestoreHelper firestoreHelper;
 
     @Nullable
     @Override
@@ -53,52 +52,45 @@ public class TransactionsFragment extends Fragment {
 
         rvTransactions.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        dbHelper = DatabaseHelper.getInstance(requireContext());
+        firestoreHelper = new FirestoreHelper();
 
         items = new ArrayList<>();
         adapter = new TransactionAdapter(items, new TransactionAdapter.OnTransactionActionListener() {
             @Override
             public void onEdit(Transaction transaction) {
-                showEditDialog(transaction);
+                // Gọi dialog edit
             }
 
             @Override
             public void onDelete(Transaction transaction) {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Confirm")
-                        .setMessage("Are you sure you want to delete this transaction?")
-                        .setPositiveButton("Delete", (dialog, which) -> {
-                            dbHelper.deleteTransaction(transaction.getId());
-                            loadTransactions();
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
+                firestoreHelper.deleteTransaction(transaction.getDocId());
             }
         });
         rvTransactions.setAdapter(adapter);
 
         setupSpinners();
-        loadTransactions();
-
-        edtFromDate.setOnClickListener(v1 -> showDatePickerDialog(edtFromDate));
-        edtToDate.setOnClickListener(v2 -> showDatePickerDialog(edtToDate));
-        btnFilter.setOnClickListener(v3 -> applyFilters());
+        setupDatePickersAndFilter();
+        setupRealtimeListener(); // <-- snapshot listener
 
         return v;
     }
 
     private void setupSpinners() {
-        List<String> categories = new ArrayList<>();
-        categories.add("All");
-        categories.addAll(dbHelper.getCategoryNames());
+        firestoreHelper.getAllCategories(list -> {
+            List<String> categories = new ArrayList<>();
+            categories.add("All");
+            for (com.example.expensemanagement.database.Category c : list) {
+                categories.add(c.getName());
+            }
 
-        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_spinner_item,
-                categories
-        );
-        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCategory.setAdapter(categoryAdapter);
+            ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(
+                    requireContext(),
+                    android.R.layout.simple_spinner_item,
+                    categories
+            );
+            categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerCategory.setAdapter(categoryAdapter);
+        });
 
         List<String> types = new ArrayList<>();
         types.add("All");
@@ -114,21 +106,64 @@ public class TransactionsFragment extends Fragment {
         spinnerType.setAdapter(typeAdapter);
     }
 
-    private void loadTransactions() {
-        items.clear();
-        items.addAll(dbHelper.getAllTransactions());
-        adapter.notifyDataSetChanged();
+    private void setupDatePickersAndFilter() {
+        edtFromDate.setOnClickListener(v1 -> showDatePickerDialog(edtFromDate));
+        edtToDate.setOnClickListener(v2 -> showDatePickerDialog(edtToDate));
+        btnFilter.setOnClickListener(v -> applyFilters());
     }
 
-    private void applyFilters() {
+    private void setupRealtimeListener() {
+        firestoreHelper.getTransactionsCollectionRef()
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) return;
+
+                    List<Transaction> newList = new ArrayList<>();
+                    if (value != null) {
+                        for (DocumentSnapshot doc : value.getDocuments()) {
+                            Transaction tx = doc.toObject(Transaction.class);
+                            if (tx != null) {
+                                tx.setDocId(doc.getId());
+                                newList.add(tx);
+                            }
+                        }
+                    }
+                    // Áp dụng filter trên danh sách mới
+                    applyRealtimeFilter(newList);
+                });
+    }
+
+    private void applyRealtimeFilter(List<Transaction> newList) {
         String fromDate = edtFromDate.getText().toString().trim();
         String toDate = edtToDate.getText().toString().trim();
         String category = spinnerCategory.getSelectedItem() != null ? spinnerCategory.getSelectedItem().toString() : "";
         String type = spinnerType.getSelectedItem() != null ? spinnerType.getSelectedItem().toString() : "";
 
         items.clear();
-        items.addAll(dbHelper.getFilteredTransactions(fromDate, toDate, category, type));
+        for (Transaction tx : newList) {
+            boolean matches = true;
+            if (!fromDate.isEmpty() && tx.getDate().compareTo(fromDate) < 0) matches = false;
+            if (!toDate.isEmpty() && tx.getDate().compareTo(toDate) > 0) matches = false;
+            if (!category.equals("All") && !tx.getCategoryName().equals(category)) matches = false;
+            if (!type.equals("All") && (type.equals("Income") != tx.isIncome())) matches = false;
+
+            if (matches) items.add(tx);
+        }
         adapter.notifyDataSetChanged();
+    }
+
+    private void applyFilters() {
+        // Lấy snapshot mới và áp dụng filter
+        firestoreHelper.getTransactionsCollectionRef()
+                .get()
+                .addOnSuccessListener(value -> {
+                    List<Transaction> newList = new ArrayList<>();
+                    for (DocumentSnapshot doc : value.getDocuments()) {
+                        Transaction tx = doc.toObject(Transaction.class);
+                        if (tx != null) tx.setDocId(doc.getId());
+                        newList.add(tx);
+                    }
+                    applyRealtimeFilter(newList);
+                });
     }
 
     private void showDatePickerDialog(final EditText editText) {
@@ -137,68 +172,10 @@ public class TransactionsFragment extends Fragment {
         int month = c.get(Calendar.MONTH);
         int day = c.get(Calendar.DAY_OF_MONTH);
 
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                requireContext(),
-                (DatePicker view, int year1, int monthOfYear, int dayOfMonth) -> {
-                    String date = year1 + "-" + String.format("%02d", (monthOfYear + 1))
-                            + "-" + String.format("%02d", dayOfMonth);
-                    editText.setText(date);
-                }, year, month, day);
-        datePickerDialog.show();
+        new DatePickerDialog(requireContext(), (view, year1, monthOfYear, dayOfMonth) -> {
+            String date = year1 + "-" + String.format("%02d", (monthOfYear + 1))
+                    + "-" + String.format("%02d", dayOfMonth);
+            editText.setText(date);
+        }, year, month, day).show();
     }
-
-    private void showEditDialog(Transaction tx) {
-        View dialogView = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_edit_transaction, null);
-
-        EditText edtNote = dialogView.findViewById(R.id.edtNote);
-        EditText edtAmount = dialogView.findViewById(R.id.edtAmount);
-        EditText edtCategory = dialogView.findViewById(R.id.edtCategory);
-        EditText edtDate = dialogView.findViewById(R.id.edtDate);
-        Spinner spinnerType = dialogView.findViewById(R.id.spinnerType);
-        Button btnSave = dialogView.findViewById(R.id.btnSave);
-        Button btnDelete = dialogView.findViewById(R.id.btnDelete);
-
-        edtNote.setText(tx.getNote());
-        edtAmount.setText(String.valueOf(tx.getAmount()));
-        edtCategory.setText(tx.getCategoryName());
-        edtDate.setText(tx.getDate());
-
-        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_spinner_item,
-                new String[]{"Income", "Expense"}
-        );
-        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerType.setAdapter(typeAdapter);
-        spinnerType.setSelection(tx.isIncome() ? 0 : 1);
-
-        edtDate.setOnClickListener(v -> showDatePickerDialog(edtDate));
-
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setTitle("Edit transaction")
-                .setView(dialogView)
-                .create();
-
-        btnSave.setOnClickListener(v -> {
-            tx.setNote(edtNote.getText().toString().trim());
-            tx.setAmount(Double.parseDouble(edtAmount.getText().toString().trim()));
-            tx.setCategoryName(edtCategory.getText().toString().trim());
-            tx.setIncome(spinnerType.getSelectedItem().toString().equals("Income"));
-            tx.setDate(edtDate.getText().toString().trim());
-
-            dbHelper.updateTransaction(tx);
-            loadTransactions();
-            dialog.dismiss();
-        });
-
-        btnDelete.setOnClickListener(v -> {
-            dbHelper.deleteTransaction(tx.getId());
-            loadTransactions();
-            dialog.dismiss();
-        });
-
-        dialog.show();
-    }
-
 }

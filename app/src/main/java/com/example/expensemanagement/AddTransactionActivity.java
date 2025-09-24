@@ -3,11 +3,14 @@ package com.example.expensemanagement;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.expensemanagement.database.DatabaseHelper;
+import com.example.expensemanagement.database.FirestoreHelper;
 import com.example.expensemanagement.database.Transaction;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Calendar;
 
@@ -18,7 +21,7 @@ public class AddTransactionActivity extends AppCompatActivity {
     private Button btnSave, btnCancel;
     private ImageButton btnBack, btnAdd;
 
-    private DatabaseHelper dbHelper;
+    private FirestoreHelper firestoreHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +38,17 @@ public class AddTransactionActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         btnAdd = findViewById(R.id.btnAdd);
 
-        dbHelper = DatabaseHelper.getInstance(this);
+        firestoreHelper = new FirestoreHelper();
 
+        // Kiểm tra user đã login
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Pleas login", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Nếu Intent gửi type (Income/Expense) thì set radio
         String type = getIntent().getStringExtra("type");
         if (type != null) {
             if (type.equals("Income")) {
@@ -46,6 +58,7 @@ public class AddTransactionActivity extends AppCompatActivity {
             }
         }
 
+        // Chọn ngày
         edtDate.setOnClickListener(v -> {
             Calendar c = Calendar.getInstance();
             new DatePickerDialog(this, (view, year, month, day) -> {
@@ -57,8 +70,6 @@ public class AddTransactionActivity extends AppCompatActivity {
         });
 
         btnBack.setOnClickListener(v -> finish());
-
-        btnCancel.setOnClickListener(v -> finish());
 
         btnSave.setOnClickListener(v -> {
             String amountStr = edtAmount.getText().toString().trim();
@@ -72,22 +83,38 @@ public class AddTransactionActivity extends AppCompatActivity {
             }
 
             double amount = Double.parseDouble(amountStr);
-
             boolean isIncome = (radioGroupType.getCheckedRadioButtonId() == R.id.radioIncome);
             String typeTx = isIncome ? "Income" : "Expense";
 
-            long categoryId = dbHelper.insertCategoryIfNotExists(categoryName, typeTx);
+            // Firestore insertCategoryIfNotExists là async
+            firestoreHelper.insertCategoryIfNotExists(categoryName, typeTx, categoryId -> {
+                Transaction transaction = new Transaction();
+                transaction.setNote(note);
+                transaction.setAmount(amount);
+                transaction.setDate(date);
+                transaction.setIncome(isIncome);
+                transaction.setCategoryId(categoryId);
+                transaction.setCategoryName(categoryName);
+                transaction.setDocId(null);
 
-            Transaction transaction = new Transaction(0, note, date, amount, isIncome, (int) categoryId, categoryName);
-            long newId = dbHelper.insertTransaction(transaction);
+                // Ghi transaction — chỉ dùng 2 tham số, FirestoreHelper tự lấy UID
+                firestoreHelper.insertTransaction(transaction, success -> {
+                    if (success != null) {
+                        Log.d("AddTransaction", "Transaction inserted: " + success);
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Transaction saved!", Toast.LENGTH_SHORT).show();
+                            setResult(RESULT_OK, new Intent());
+                            finish();
+                        });
 
-            if (newId > 0) {
-                Toast.makeText(this, "Transaction saved!", Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK, new Intent()); // báo về HomeFragment/TransactionsFragment load lại
-                finish();
-            } else {
-                Toast.makeText(this, "Error saving transaction", Toast.LENGTH_SHORT).show();
-            }
+                    } else {
+                        Log.e("AddTransaction", "Failed to insert transaction!");
+                        runOnUiThread(() ->
+                                Toast.makeText(this, "Failed to save transaction", Toast.LENGTH_SHORT).show()
+                        );
+                    }
+                });
+            });
         });
 
         btnAdd.setOnClickListener(v ->

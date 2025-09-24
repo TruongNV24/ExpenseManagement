@@ -3,6 +3,7 @@ package com.example.expensemanagement;
 import android.app.DatePickerDialog;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.expensemanagement.database.Category;
 import com.example.expensemanagement.database.CategoryStat;
-import com.example.expensemanagement.database.DatabaseHelper;
+import com.example.expensemanagement.database.FirestoreHelper;
+import com.example.expensemanagement.database.Transaction;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
@@ -35,7 +37,7 @@ import java.util.Map;
 public class StatisticsFragment extends Fragment {
 
     private PieChart pieChart;
-    private DatabaseHelper dbHelper;
+    private FirestoreHelper firestore;
     private Button btnExpense, btnIncome;
     private TextView tvMonth, tvDateRange;
     private RecyclerView recyclerView;
@@ -46,6 +48,7 @@ public class StatisticsFragment extends Fragment {
     private Calendar selectedMonth;
     private SimpleDateFormat monthFormat = new SimpleDateFormat("MM/yyyy", Locale.getDefault());
     private SimpleDateFormat dayMonthFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+    private SimpleDateFormat fireDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     private static final String COLOR_EXPENSE = "#FF4444";
     private static final String COLOR_INCOME  = "#33AA33";
@@ -56,9 +59,10 @@ public class StatisticsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_statistics, container, false);
 
-        dbHelper = DatabaseHelper.getInstance(requireContext());
+        firestore = new FirestoreHelper();
         pieChart = view.findViewById(R.id.pieChart);
         btnExpense = view.findViewById(R.id.btnExpense);
         btnIncome = view.findViewById(R.id.btnIncome);
@@ -78,18 +82,18 @@ public class StatisticsFragment extends Fragment {
         updateMonthLabels();
 
         setActiveTab(true);
-        loadPieChartData(true);
+        loadMonthData(true);
         updateSummary();
 
         btnExpense.setOnClickListener(v -> {
             setActiveTab(true);
-            loadPieChartData(true);
+            loadMonthData(true);
             updateSummary();
         });
 
         btnIncome.setOnClickListener(v -> {
             setActiveTab(false);
-            loadPieChartData(false);
+            loadMonthData(false);
             updateSummary();
         });
 
@@ -111,9 +115,9 @@ public class StatisticsFragment extends Fragment {
                     updateMonthLabels();
 
                     if (btnExpense.getCurrentTextColor() == Color.WHITE) {
-                        loadPieChartData(true);
+                        loadMonthData(true);
                     } else {
-                        loadPieChartData(false);
+                        loadMonthData(false);
                     }
                     updateSummary();
                 }, year, month, 1);
@@ -157,86 +161,105 @@ public class StatisticsFragment extends Fragment {
         Calendar end = (Calendar) selectedMonth.clone();
         end.set(Calendar.DAY_OF_MONTH, end.getActualMaximum(Calendar.DAY_OF_MONTH));
 
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        String startDate = df.format(start.getTime());
-        String endDate   = df.format(end.getTime());
+        String startDate = fireDateFormat.format(start.getTime());
+        String endDate = fireDateFormat.format(end.getTime());
 
-        double totalIncome = dbHelper.getTotalByTypeInRange("Income", startDate, endDate);
-        double totalExpense = dbHelper.getTotalByTypeInRange("Expense", startDate, endDate);
-        double balance = totalIncome - totalExpense;
+        firestore.getFilteredTransactions(startDate, endDate, "", "All", transactions -> {
+            Log.d("Statistics", "Transactions count: " + transactions.size());
+            double totalIncome = 0;
+            double totalExpense = 0;
+            for (Transaction t : transactions) {
+                Log.d("Statistics", "Transaction: " + t.getCategoryName() + " - " + t.getAmount());
+                if (t.isIncome()) totalIncome += t.getAmount();
+                else totalExpense += t.getAmount();
+            }
+            double balance = totalIncome - totalExpense;
 
-        tvIncome.setText(String.format("+$%,.2f", totalIncome));
-        tvExpense.setText(String.format("-$%,.2f", totalExpense));
-        tvBalance.setText(String.format("$%,.2f", balance));
-
+            tvIncome.setText(String.format("+$%,.2f", totalIncome));
+            tvExpense.setText(String.format("-$%,.2f", totalExpense));
+            tvBalance.setText(String.format("$%,.2f", balance));
+        });
     }
 
-    private void loadPieChartData(boolean isExpense) {
+    private void loadMonthData(boolean isExpense) {
         Calendar start = (Calendar) selectedMonth.clone();
         start.set(Calendar.DAY_OF_MONTH, 1);
 
         Calendar end = (Calendar) selectedMonth.clone();
         end.set(Calendar.DAY_OF_MONTH, end.getActualMaximum(Calendar.DAY_OF_MONTH));
 
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        String startDate = df.format(start.getTime());
-        String endDate   = df.format(end.getTime());
-
+        String startDate = fireDateFormat.format(start.getTime());
+        String endDate   = fireDateFormat.format(end.getTime());
         String type = isExpense ? "Expense" : "Income";
-        Map<String, Double> categoryData = dbHelper.getExpenseSummaryByCategory(type, startDate, endDate);
 
-        ArrayList<PieEntry> entries = new ArrayList<>();
-        List<CategoryStat> listItems = new ArrayList<>();
-        float total = 0f;
+        firestore.getFilteredTransactions(startDate, endDate, "", type, transactions -> {
 
-        for (Map.Entry<String, Double> entry : categoryData.entrySet()) {
-            float value = entry.getValue().floatValue();
-            total += value;
-            entries.add(new PieEntry(value, entry.getKey()));
+            Log.d("Statistics", "Transactions for PieChart: " + transactions.size());
 
-            Category category = new Category(entry.getKey(), type);
-            listItems.add(new CategoryStat(category, value));
-        }
+            // Tổng tiền theo category
+            Map<String, Double> categoryMap = new java.util.HashMap<>();
+            for (Transaction t : transactions) {
+                String cat = t.getCategoryName() != null ? t.getCategoryName() : "Unknown";
+                double amount = t.getAmount();
+                if (amount > 0) {
+                    categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + amount);
+                }
+            }
 
-        if (entries.isEmpty()) {
-            entries.add(new PieEntry(1f, "No data avaiable"));
-        }
+            if (categoryMap.isEmpty()) {
+                pieChart.clear();
+                pieChart.setNoDataText("No transactions");
+                return;
+            }
 
-        categoryAdapter.submitList(listItems);
+            // PieChart & RecyclerView
+            List<CategoryStat> listItems = new ArrayList<>();
+            ArrayList<PieEntry> entries = new ArrayList<>();
+            float total = 0f;
 
-        PieDataSet dataSet = new PieDataSet(entries, isExpense ? "Expense" : "Income");
-        dataSet.setColors(new int[]{
-                Color.rgb(244, 67, 54),
-                Color.rgb(33, 150, 243),
-                Color.rgb(76, 175, 80),
-                Color.rgb(255, 193, 7),
-                Color.rgb(156, 39, 176),
-                Color.rgb(0, 188, 212),
-                Color.rgb(255, 87, 34)
+            for (Map.Entry<String, Double> entry : categoryMap.entrySet()) {
+                float value = entry.getValue().floatValue();
+                total += value;
+                entries.add(new PieEntry(value, entry.getKey()));
+
+                Category category = new Category(null, entry.getKey(), type);
+                listItems.add(new CategoryStat(category, value));
+            }
+
+            categoryAdapter.submitList(listItems);
+
+            PieDataSet dataSet = new PieDataSet(entries, "");
+            dataSet.setColors(new int[]{
+                    Color.rgb(244, 67, 54),
+                    Color.rgb(33, 150, 243),
+                    Color.rgb(76, 175, 80),
+                    Color.rgb(255, 193, 7),
+                    Color.rgb(156, 39, 176),
+                    Color.rgb(0, 188, 212),
+                    Color.rgb(255, 87, 34)
+            });
+            dataSet.setValueTextColor(Color.WHITE);
+            dataSet.setValueTextSize(12f);
+
+            PieData pieData = new PieData(dataSet);
+            pieChart.setData(pieData);
+            pieChart.setUsePercentValues(true);
+            pieChart.getDescription().setEnabled(false);
+            pieChart.setDrawEntryLabels(false);
+            pieChart.setHoleRadius(45f);
+            pieChart.setTransparentCircleRadius(50f);
+
+            pieChart.setCenterText((isExpense ? "Total Expense:\n" : "Total Income:\n") + String.format("$%,.2f", total));
+            pieChart.setCenterTextSize(14f);
+            pieChart.setCenterTextColor(Color.BLACK);
+
+            Legend legend = pieChart.getLegend();
+            legend.setEnabled(true);
+            legend.setTextSize(12f);
+            legend.setForm(Legend.LegendForm.CIRCLE);
+
+            pieChart.animateY(800);
+            pieChart.invalidate();
         });
-        dataSet.setValueTextColor(Color.WHITE);
-        dataSet.setValueTextSize(12f);
-
-        PieData pieData = new PieData(dataSet);
-
-        pieChart.setData(pieData);
-        pieChart.setUsePercentValues(true);
-        pieChart.getDescription().setEnabled(false);
-        pieChart.setDrawEntryLabels(false);
-        pieChart.setHoleRadius(45f);
-        pieChart.setTransparentCircleRadius(50f);
-
-        String centerText = (isExpense ? "Total Expense:\n" : "Total Income:\n") + String.format("$%,.2f", total);
-        pieChart.setCenterText(centerText);
-        pieChart.setCenterTextSize(14f);
-        pieChart.setCenterTextColor(Color.BLACK);
-
-        Legend legend = pieChart.getLegend();
-        legend.setEnabled(true);
-        legend.setTextSize(12f);
-        legend.setForm(Legend.LegendForm.CIRCLE);
-
-        pieChart.animateY(800);
-        pieChart.invalidate();
     }
 }

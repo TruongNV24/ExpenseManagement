@@ -19,11 +19,12 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.expensemanagement.database.DatabaseHelper;
+import com.example.expensemanagement.database.FirestoreHelper;
 import com.example.expensemanagement.database.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class HomeFragment extends Fragment {
 
@@ -31,7 +32,7 @@ public class HomeFragment extends Fragment {
     private TransactionAdapter adapter;
     private List<Transaction> items;
     private Button btnExpense, btnIncome;
-    private DatabaseHelper dbHelper;
+    private FirestoreHelper firestore;
 
     private TextView tvBalance, tvIncome, tvSpending;
 
@@ -53,8 +54,7 @@ public class HomeFragment extends Fragment {
         tvIncome = v.findViewById(R.id.tvIncome);
         tvSpending = v.findViewById(R.id.tvSpending);
 
-        dbHelper = DatabaseHelper.getInstance(requireContext());
-
+        firestore = new FirestoreHelper();
         items = new ArrayList<>();
 
         adapter = new TransactionAdapter(items, new TransactionAdapter.OnTransactionActionListener() {
@@ -66,7 +66,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onDelete(Transaction transaction) {
                 confirmDelete(transaction, () -> {
-                    dbHelper.deleteTransaction(transaction.getId());
+                    firestore.deleteTransaction(transaction.getDocId());
                     loadTransactions();
                     updateSummary();
                 });
@@ -95,28 +95,22 @@ public class HomeFragment extends Fragment {
 
     private void loadTransactions() {
         items.clear();
-        items.addAll(dbHelper.getAllTransactions());
-        adapter.notifyDataSetChanged();
+        firestore.getAllTransactions(transactions -> {
+            items.addAll(transactions);
+            adapter.notifyDataSetChanged();
+        });
     }
 
     private void updateSummary() {
-        double totalIncome = 0;
-        double totalExpense = 0;
+        firestore.getSummary(summary -> {
+            double totalIncome = summary.getOrDefault("income", 0.0);
+            double totalExpense = summary.getOrDefault("expense", 0.0);
+            double balance = summary.getOrDefault("balance", 0.0);
 
-        List<Transaction> all = dbHelper.getAllTransactions();
-        for (Transaction t : all) {
-            if (t.isIncome()) {
-                totalIncome += t.getAmount();
-            } else {
-                totalExpense += t.getAmount();
-            }
-        }
-
-        double balance = totalIncome - totalExpense;
-
-        tvBalance.setText(String.format("$%,.2f", balance));
-        tvIncome.setText(String.format("+$%,.2f", totalIncome));
-        tvSpending.setText(String.format("-$%,.2f", totalExpense));
+            tvBalance.setText(String.format("$%,.2f", balance));
+            tvIncome.setText(String.format("+$%,.2f", totalIncome));
+            tvSpending.setText(String.format("-$%,.2f", totalExpense));
+        });
     }
 
     @Override
@@ -132,11 +126,8 @@ public class HomeFragment extends Fragment {
     private void confirmDelete(Transaction transaction, Runnable onDeleted) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Confirm")
-                .setMessage("\n" +
-                        "Are you sure you want to delete this transaction?")
-                .setPositiveButton("Delete", (d, which) -> {
-                    onDeleted.run();
-                })
+                .setMessage("\nAre you sure you want to delete this transaction?")
+                .setPositiveButton("Delete", (d, which) -> onDeleted.run())
                 .setNegativeButton("Cancel", null)
                 .show();
     }
@@ -167,7 +158,6 @@ public class HomeFragment extends Fragment {
         );
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerType.setAdapter(typeAdapter);
-
         spinnerType.setSelection(transaction.isIncome() ? 0 : 1);
 
         AlertDialog dialog = builder.create();
@@ -179,7 +169,7 @@ public class HomeFragment extends Fragment {
             transaction.setDate(edtDate.getText().toString());
             transaction.setIncome(spinnerType.getSelectedItem().toString().equals("Income"));
 
-            dbHelper.updateTransaction(transaction);
+            firestore.updateTransaction(transaction);
             loadTransactions();
             updateSummary();
             dialog.dismiss();
@@ -187,7 +177,7 @@ public class HomeFragment extends Fragment {
 
         btnDelete.setOnClickListener(v -> {
             confirmDelete(transaction, () -> {
-                dbHelper.deleteTransaction(transaction.getId());
+                firestore.deleteTransaction(transaction.getDocId());
                 loadTransactions();
                 updateSummary();
                 dialog.dismiss();

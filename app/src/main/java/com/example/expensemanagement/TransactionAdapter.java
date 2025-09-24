@@ -5,11 +5,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.expensemanagement.database.FirestoreHelper;
 import com.example.expensemanagement.database.Transaction;
 import com.example.expensemanagement.R;
 
@@ -19,6 +19,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
     private List<Transaction> transactionList;
     private OnTransactionActionListener listener;
+    private FirestoreHelper firestoreHelper;
 
     public interface OnTransactionActionListener {
         void onEdit(Transaction tx);
@@ -28,6 +29,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     public TransactionAdapter(List<Transaction> transactionList, OnTransactionActionListener listener) {
         this.transactionList = transactionList;
         this.listener = listener;
+        firestoreHelper = new FirestoreHelper(); // khởi tạo FirestoreHelper
     }
 
     public void setData(List<Transaction> list) {
@@ -68,7 +70,12 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         });
 
         holder.btnDelete.setOnClickListener(v -> {
-            if (listener != null) listener.onDelete(tx);
+            if (listener != null) {
+                listener.onDelete(tx);
+            } else {
+                // fallback: xóa trực tiếp Firestore nếu không có listener
+                firestoreHelper.deleteTransaction(tx.getDocId());
+            }
         });
     }
 

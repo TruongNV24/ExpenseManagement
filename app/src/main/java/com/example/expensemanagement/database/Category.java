@@ -1,14 +1,14 @@
 package com.example.expensemanagement.database;
 
 public class Category {
-    private int id;
+    private String docId; // docId từ Firestore
     private String name;
     private String type;
 
     public Category() {}
 
-    public Category(int id, String name, String type) {
-        this.id = id;
+    public Category(String docId, String name, String type) {
+        this.docId = docId;
         this.name = name;
         this.type = type;
     }
@@ -18,8 +18,8 @@ public class Category {
         this.type = type;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public String getDocId() { return docId; }
+    public void setDocId(String docId) { this.docId = docId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
