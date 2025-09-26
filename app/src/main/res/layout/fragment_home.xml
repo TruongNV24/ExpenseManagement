@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="#F5F6FA"
     android:fillViewport="true">
 
@@ -27,6 +28,18 @@
                 android:textColor="#2C3E50"
                 android:textSize="20sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivProfile"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_account_circle"
+                android:contentDescription="Profile"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp"
+                app:tint="#2C3E50" />
+
+
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
@@ -98,6 +111,7 @@
                 app:icon="@drawable/ic_add"
                 app:iconTint="@android:color/white" />
         </LinearLayout>
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -196,7 +210,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Spending"
+                        android:text="Expense"
                         android:textColor="#2C3E50"
                         android:textStyle="bold" />
 
@@ -211,11 +225,48 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <View
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="1dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:background="#DDDDDD" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Goals"
+                android:textColor="#2C3E50"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddGoal"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:text="Add Goal"
+                android:textAllCaps="false"
+                android:textColor="#4A90E2"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_add"
+                app:iconGravity="textStart"
+                app:iconTint="#4A90E2"
+                app:strokeColor="#4A90E2"
+                app:strokeWidth="2dp" />
+        </LinearLayout>
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerGoals"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never"
+            tools:listitem="@layout/item_goal" />
 
         <TextView
             android:id="@+id/tvRecent"

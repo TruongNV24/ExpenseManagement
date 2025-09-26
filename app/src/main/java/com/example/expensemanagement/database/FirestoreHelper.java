@@ -1,7 +1,9 @@
 package com.example.expensemanagement.database;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -29,8 +31,17 @@ public class FirestoreHelper {
         return db.collection("users").document(userId).collection("transactions");
     }
 
+    private CollectionReference getGoalsCollection() {
+        return db.collection("users").document(userId).collection("goals");
+    }
+
     // ---------------- CATEGORY ---------------- //
 
+    /**
+     * Nếu category cùng tên + type đã tồn tại thì trả về docId hiện có,
+     * nếu chưa có thì tạo mới và trả về docId vừa tạo.
+     * Signature giữ nguyên để tương thích với AddTransactionActivity cũ.
+     */
     public void insertCategoryIfNotExists(String name, String type, FirestoreCallback<String> callback) {
         getCategoriesCollection()
                 .whereEqualTo("name", name)
@@ -59,7 +70,7 @@ public class FirestoreHelper {
     public void getAllCategories(FirestoreListCallback<Category> callback) {
         getCategoriesCollection().get().addOnCompleteListener(task -> {
             List<Category> list = new ArrayList<>();
-            if (task.isSuccessful()) {
+            if (task.isSuccessful() && task.getResult() != null) {
                 for (QueryDocumentSnapshot doc : task.getResult()) {
                     String name = doc.getString("name");
                     String type = doc.getString("type");
@@ -83,9 +94,10 @@ public class FirestoreHelper {
         map.put("amount", tx.getAmount());
         map.put("note", tx.getNote());
         map.put("categoryId", tx.getCategoryId());
-        map.put("date", tx.getDate()); // YYYY-MM-DD
+        map.put("date", tx.getDate()); // format YYYY-MM-dd expected by app
         map.put("type", tx.isIncome() ? "Income" : "Expense");
         map.put("categoryName", tx.getCategoryName());
+        map.put("createdAt", Timestamp.now());
 
         getTransactionsCollection().add(map)
                 .addOnSuccessListener(doc -> callback.onCallback(doc.getId()))
@@ -101,6 +113,7 @@ public class FirestoreHelper {
             map.put("date", tx.getDate());
             map.put("type", tx.isIncome() ? "Income" : "Expense");
             map.put("categoryName", tx.getCategoryName());
+            map.put("createdAt", Timestamp.now());
 
             getTransactionsCollection().document(tx.getDocId()).set(map);
         }
@@ -116,7 +129,7 @@ public class FirestoreHelper {
                 .get()
                 .addOnCompleteListener(task -> {
                     List<Transaction> list = new ArrayList<>();
-                    if (task.isSuccessful()) {
+                    if (task.isSuccessful() && task.getResult() != null) {
                         for (QueryDocumentSnapshot doc : task.getResult()) {
                             Transaction tx = doc.toObject(Transaction.class);
                             tx.setDocId(doc.getId());
@@ -130,7 +143,7 @@ public class FirestoreHelper {
                 });
     }
 
-    // ---------------- FILTERED / MONTHLY TRANSACTIONS ---------------- //
+    // ---------------- FILTERS / MONTHLY ---------------- //
 
     public void getFilteredTransactions(String fromDate, String toDate, String categoryName, String type,
                                         FirestoreListCallback<Transaction> callback) {
@@ -144,11 +157,11 @@ public class FirestoreHelper {
             query = query.whereLessThanOrEqualTo("date", toDate);
         }
 
-        if (categoryName != null && !categoryName.isEmpty() && !categoryName.equals("All")) {
+        if (categoryName != null && !categoryName.isEmpty() && !"All".equals(categoryName)) {
             query = query.whereEqualTo("categoryName", categoryName);
         }
 
-        if (type != null && !type.isEmpty() && !type.equals("All")) {
+        if (type != null && !type.isEmpty() && !"All".equals(type)) {
             query = query.whereEqualTo("type", type);
         }
 
@@ -224,8 +237,72 @@ public class FirestoreHelper {
                 });
     }
 
+    // Kéo reference collection (một số fragment cũ gọi)
     public CollectionReference getTransactionsCollectionRef() {
         return getTransactionsCollection();
+    }
+
+    // ---------------- GOALS ---------------- //
+
+    public void insertGoal(Goal goal, FirestoreCallback<String> callback) {
+        getGoalsCollection().add(goal)
+                .addOnSuccessListener(doc -> callback.onCallback(doc.getId()))
+                .addOnFailureListener(e -> callback.onCallback(null));
+    }
+
+    public void updateGoal(Goal goal) {
+        if (goal.getDocId() != null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", goal.getName());
+            map.put("targetAmount", goal.getTargetAmount());
+            map.put("currentAmount", goal.getCurrentAmount());
+            map.put("completed", goal.isCompleted());
+            map.put("createdAt", goal.getCreatedAt());
+
+            getGoalsCollection().document(goal.getDocId()).set(map);
+        }
+    }
+
+    public void deleteGoal(String docId) {
+        getGoalsCollection().document(docId).delete();
+    }
+
+    public void getAllGoals(FirestoreListCallback<Goal> callback) {
+        getGoalsCollection()
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnCompleteListener(task -> {
+                    List<Goal> list = new ArrayList<>();
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (QueryDocumentSnapshot doc : task.getResult()) {
+                            Goal goal = doc.toObject(Goal.class);
+                            goal.setDocId(doc.getId());
+                            list.add(goal);
+                        }
+                    }
+                    callback.onCallback(list);
+                });
+    }
+
+    public void completeGoal(Goal goal, FirestoreCallback<String> callback) {
+        if (goal == null || goal.getDocId() == null) {
+            callback.onCallback(null);
+            return;
+        }
+
+        goal.setCompleted(true);
+        updateGoal(goal);
+
+        // Tạo transaction khi goal hoàn thành (constructor giữ nguyên như dự án)
+        Transaction tx = new Transaction(
+                "Goal Completed: " + goal.getName(),
+                new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()),
+                goal.getTargetAmount(),
+                false
+        );
+        tx.setCategoryName("Goal");
+
+        insertTransaction(tx, callback);
     }
 
     // ---------------- CALLBACK INTERFACES ---------------- //
