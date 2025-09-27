@@ -33,8 +33,7 @@ public class Goal {
     public void setTargetAmount(double targetAmount) { this.targetAmount = targetAmount; }
 
     public double getCurrentAmount() { return currentAmount; }
-    public void setCurrentAmount(double currentAmount) { this.currentAmount = currentAmount; }
-
+    public void setCurrentAmount(double currentAmount) { this.currentAmount = currentAmount;}
     public boolean isCompleted() { return completed; }
     public void setCompleted(boolean completed) { this.completed = completed; }
 

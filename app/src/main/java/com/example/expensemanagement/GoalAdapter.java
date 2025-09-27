@@ -53,7 +53,6 @@ public class GoalAdapter extends RecyclerView.Adapter<GoalAdapter.GoalViewHolder
         } else {
             holder.tvGoalCompleted.setVisibility(View.GONE);
         }
-
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onClick(goal);
         });
