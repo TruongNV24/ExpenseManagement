@@ -1,5 +1,6 @@
 package com.example.expensemanagement;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -16,9 +17,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.expensemanagement.database.FirestoreHelper;
 import com.example.expensemanagement.database.Transaction;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -58,12 +56,15 @@ public class TransactionsFragment extends Fragment {
         adapter = new TransactionAdapter(items, new TransactionAdapter.OnTransactionActionListener() {
             @Override
             public void onEdit(Transaction transaction) {
-                // Gọi dialog edit
+                showEditDialog(transaction);
             }
 
             @Override
             public void onDelete(Transaction transaction) {
-                firestoreHelper.deleteTransaction(transaction.getDocId());
+                confirmDelete(transaction, () -> {
+                    firestoreHelper.deleteTransaction(transaction.getDocId());
+                    Toast.makeText(requireContext(), "Transaction deleted", Toast.LENGTH_SHORT).show();
+                });
             }
         });
         rvTransactions.setAdapter(adapter);
@@ -115,19 +116,16 @@ public class TransactionsFragment extends Fragment {
     private void setupRealtimeListener() {
         firestoreHelper.getTransactionsCollectionRef()
                 .addSnapshotListener((value, error) -> {
-                    if (error != null) return;
+                    if (error != null || value == null) return;
 
                     List<Transaction> newList = new ArrayList<>();
-                    if (value != null) {
-                        for (DocumentSnapshot doc : value.getDocuments()) {
-                            Transaction tx = doc.toObject(Transaction.class);
-                            if (tx != null) {
-                                tx.setDocId(doc.getId());
-                                newList.add(tx);
-                            }
+                    for (DocumentSnapshot doc : value.getDocuments()) {
+                        Transaction tx = doc.toObject(Transaction.class);
+                        if (tx != null) {
+                            tx.setDocId(doc.getId());
+                            newList.add(tx);
                         }
                     }
-                    // Áp dụng filter trên danh sách mới
                     applyRealtimeFilter(newList);
                 });
     }
@@ -152,7 +150,6 @@ public class TransactionsFragment extends Fragment {
     }
 
     private void applyFilters() {
-        // Lấy snapshot mới và áp dụng filter
         firestoreHelper.getTransactionsCollectionRef()
                 .get()
                 .addOnSuccessListener(value -> {
@@ -177,5 +174,70 @@ public class TransactionsFragment extends Fragment {
                     + "-" + String.format("%02d", dayOfMonth);
             editText.setText(date);
         }, year, month, day).show();
+    }
+
+    private void showEditDialog(Transaction transaction) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_edit_transaction, null);
+        builder.setView(dialogView);
+
+        EditText edtNote = dialogView.findViewById(R.id.edtNote);
+        EditText edtAmount = dialogView.findViewById(R.id.edtAmount);
+        EditText edtCategory = dialogView.findViewById(R.id.edtCategory);
+        Spinner spinnerType = dialogView.findViewById(R.id.spinnerType);
+        EditText edtDate = dialogView.findViewById(R.id.edtDate);
+        Button btnSave = dialogView.findViewById(R.id.btnSave);
+        Button btnDelete = dialogView.findViewById(R.id.btnDelete);
+
+        edtNote.setText(transaction.getNote());
+        edtAmount.setText(String.valueOf(transaction.getAmount()));
+        edtCategory.setText(transaction.getCategoryName());
+        edtDate.setText(transaction.getDate());
+
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                new String[]{"Income", "Expense"}
+        );
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType.setAdapter(typeAdapter);
+        spinnerType.setSelection(transaction.isIncome() ? 0 : 1);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        btnSave.setOnClickListener(v -> {
+            try {
+                transaction.setNote(edtNote.getText().toString());
+                transaction.setAmount(Double.parseDouble(edtAmount.getText().toString()));
+                transaction.setCategoryName(edtCategory.getText().toString());
+                transaction.setDate(edtDate.getText().toString());
+                transaction.setIncome(spinnerType.getSelectedItem().toString().equals("Income"));
+
+                firestoreHelper.updateTransaction(transaction);
+                Toast.makeText(requireContext(), "Transaction updated", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            } catch (Exception e) {
+                Toast.makeText(requireContext(), "Invalid data", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnDelete.setOnClickListener(v -> {
+            confirmDelete(transaction, () -> {
+                firestoreHelper.deleteTransaction(transaction.getDocId());
+                Toast.makeText(requireContext(), "Transaction deleted", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        });
+    }
+
+    private void confirmDelete(Transaction transaction, Runnable onDeleted) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Confirm")
+                .setMessage("Are you sure you want to delete this transaction?")
+                .setPositiveButton("Delete", (d, which) -> onDeleted.run())
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }
